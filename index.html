@@ -22,8 +22,25 @@
       image-rendering: pixelated;
       image-rendering: crisp-edges; /* Firefox */
       width: 1280px;
-      height: 480px;
       max-width: 100%;
+      aspect-ratio: 800 / 300;
+    }
+    #rotate-msg {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #111827;
+      color: #fff;
+      font-size: 18px;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      z-index: 100;
+      font-family: 'Courier New', monospace;
+      letter-spacing: 1px;
+    }
+    @media (max-width: 600px) and (orientation: portrait) {
+      #rotate-msg { display: flex; }
     }
     #instructions {
       color: rgba(255, 255, 255, 0.3);
@@ -36,6 +53,7 @@
 </head>
 <body>
   <canvas id="gameCanvas" width="800" height="300"></canvas>
+  <div id="rotate-msg">&#128247; Rotate your device to play</div>
   <div id="instructions">SPACE / TAP to jump &nbsp;�&nbsp; Land on top to STOMP &nbsp;�&nbsp; Avoid sides</div>
 
   <script>
@@ -1699,6 +1717,10 @@
   loadTrees();
   initBackground();
   requestAnimationFrame(gameLoop);
+
+  if ('ontouchstart' in window) {
+    document.getElementById('instructions').textContent = 'TAP TO JUMP';
+  }
 
   </script>
 </body>
