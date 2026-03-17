@@ -174,8 +174,12 @@
   };
 
   // ----------------------------------------------------------------
-  // LEVEL CONFIG � add new levels here
+  // LEVEL CONFIG — add new levels here
   // ----------------------------------------------------------------
+
+  const PORTOFINO       = ['#E8855A','#F2C84B','#E8826E','#7AAFA8','#D4907A','#8BAA7A','#C87090','#7898C8'];
+  const PORTOFINO_MUTED = ['#A05A3A','#B09030','#B06050','#507870','#9A6858','#607848','#905068','#506890'];
+
   const LEVELS = {
     1: {
       name:            'Grasslands',
@@ -191,10 +195,10 @@
     },
     2: {
       name:          'Suburbs',
-      bgColor:       '#C8DDEF',
-      bgGradBottom:  '#D8EAF5',
-      groundColor:   '#8A8A8A',
-      dirtColor:     '#666666',
+      bgColor:       '#6BBFEE',
+      bgGradBottom:  '#A8D8F0',
+      groundColor:   '#8A8078',
+      dirtColor:     '#6A6058',
       obstacleTypes: ['CAR', 'SMALL_HOUSE', 'BIRD'],
       powerUpTypes:  ['SHIELD'],
       cloudCount:    3,
@@ -241,9 +245,9 @@
       hitbox: { ox: 4, oy: 4, ow: 52, oh: 44 },
     },
     BIRD: {
-      width: 30, height: 18, stompPoints: 100, spawnWeight: 3,
+      width: 40, height: 26, stompPoints: 100, spawnWeight: 3,
       drawFn: 'drawBird',
-      hitbox: { ox: 2, oy: 2, ow: 26, oh: 14 },
+      hitbox: { ox: 2, oy: 2, ow: 36, oh: 22 },
       floatHeight: 82,
     },
     // TODO LEVEL 3: BUILDING
@@ -728,13 +732,14 @@
   // TODO STUB SPRITES � replace with real art for future levels
   // ================================================================
 
-  function drawCar(ctx, x, y, w, h) {
+  function drawCar(ctx, x, y, w, h, bodyColor) {
+    const col = bodyColor || '#9B9B9B';
     const bx = x, by = y + h * 0.42, bw = w, bh = h * 0.58;
     // Body
-    ctx.fillStyle = '#9B9B9B';
+    ctx.fillStyle = col;
     ctx.fillRect(bx, by, bw, bh);
-    // Cabin
-    ctx.fillStyle = '#C2C2C2';
+    // Cabin (lighter version of body color)
+    ctx.fillStyle = shade(col, 28);
     ctx.fillRect(x + w * 0.12, y, w * 0.76, h * 0.48);
     // Windows
     ctx.fillStyle = '#AACCE8';
@@ -759,38 +764,65 @@
   }
 
   function drawBird(ctx, x, y, w, h) {
-    const cx = x + w / 2, cy = y + h / 2;
-    const flap = Math.sin(GS.frame * 0.18) * h * 0.5;
-    ctx.fillStyle = '#334455';
-    // Body
+    const flap = Math.sin(GS.frame * 0.15);
+    // Wing (behind body, darker grey, flapping)
+    ctx.fillStyle = '#7A7888';
     ctx.beginPath();
-    ctx.ellipse(cx, cy + h * 0.1, w * 0.22, h * 0.22, 0, 0, Math.PI * 2);
-    ctx.fill();
-    // Wings
-    ctx.beginPath();
-    ctx.moveTo(cx, cy + h * 0.1);
-    ctx.lineTo(cx - w * 0.5, cy - flap);
-    ctx.lineTo(cx - w * 0.18, cy + h * 0.05);
+    ctx.moveTo(x + w * 0.55, y + h * 0.52);
+    ctx.lineTo(x + w * 0.18, y + h * 0.52 - flap * h * 0.75);
+    ctx.lineTo(x + w * 0.82, y + h * 0.45 - flap * h * 0.18);
     ctx.closePath();
     ctx.fill();
+    // Body (plump, light grey)
+    ctx.fillStyle = '#B0ADB8';
     ctx.beginPath();
-    ctx.moveTo(cx, cy + h * 0.1);
-    ctx.lineTo(cx + w * 0.5, cy - flap);
-    ctx.lineTo(cx + w * 0.18, cy + h * 0.05);
+    ctx.ellipse(x + w * 0.50, y + h * 0.65, w * 0.40, h * 0.26, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Tail
+    ctx.fillStyle = '#8A8898';
+    ctx.beginPath();
+    ctx.moveTo(x + w * 0.84, y + h * 0.60);
+    ctx.lineTo(x + w + 2,    y + h * 0.42);
+    ctx.lineTo(x + w + 2,    y + h * 0.78);
     ctx.closePath();
     ctx.fill();
-    // Beak
-    ctx.fillStyle = '#FFAA22';
-    ctx.fillRect(cx + w * 0.18, cy + h * 0.06, 4, 2);
+    // Neck/head (slightly lighter)
+    ctx.fillStyle = '#C8C6D0';
+    ctx.beginPath();
+    ctx.ellipse(x + w * 0.16, y + h * 0.56, w * 0.14, h * 0.20, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Iridescent neck patch
+    ctx.fillStyle = 'rgba(80,160,120,0.38)';
+    ctx.beginPath();
+    ctx.ellipse(x + w * 0.20, y + h * 0.60, w * 0.09, h * 0.12, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Beak (short stubby, dark)
+    ctx.fillStyle = '#555566';
+    ctx.beginPath();
+    ctx.moveTo(x + w * 0.04, y + h * 0.51);
+    ctx.lineTo(x - 5,        y + h * 0.56);
+    ctx.lineTo(x + w * 0.04, y + h * 0.62);
+    ctx.closePath();
+    ctx.fill();
+    // Eye white
+    ctx.fillStyle = '#FFFFFF';
+    ctx.beginPath();
+    ctx.arc(x + w * 0.11, y + h * 0.51, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+    // Pupil
+    ctx.fillStyle = '#111';
+    ctx.beginPath();
+    ctx.arc(x + w * 0.10, y + h * 0.51, 1.2, 0, Math.PI * 2);
+    ctx.fill();
   }
 
-  function drawSmallHouse(ctx, x, y, w, h) {
+  function drawSmallHouse(ctx, x, y, w, h, wallColor) {
     const base = y + h;
     // Walls
-    ctx.fillStyle = '#E8D8B8';
+    ctx.fillStyle = wallColor || '#E8D8B8';
     ctx.fillRect(x, y + h * 0.38, w, h * 0.62);
     // Roof
-    ctx.fillStyle = '#8B3030';
+    ctx.fillStyle = '#9B3A2A';
     ctx.beginPath();
     ctx.moveTo(x - 3,       y + h * 0.40);
     ctx.lineTo(x + w / 2,   y);
@@ -806,31 +838,28 @@
     ctx.fillRect(x + w * 0.66, y + h * 0.48, w * 0.22, w * 0.22);
   }
 
-  function drawHouseSilhouette(ctx, x, groundY, style) {
+  function drawHouseSilhouette(ctx, x, groundY, style, color) {
     // style 0: small cottage, 1: medium house, 2: tall two-storey
     const configs = [
-      { w: 55, h: 62,  chimneyH: 0  },
-      { w: 70, h: 82,  chimneyH: 0  },
-      { w: 65, h: 105, chimneyH: 16 },
+      { w: 55, h: 62  },
+      { w: 70, h: 82  },
+      { w: 65, h: 105 },
     ];
     const c = configs[style] || configs[0];
     const bx = x, by = groundY - c.h;
-    ctx.fillStyle = '#3a3a4a';
+    ctx.fillStyle = color || '#3a3a4a';
     // Body
     ctx.fillRect(bx, by + c.h * 0.38, c.w, c.h * 0.62);
-    // Roof
+    // Roof (slightly darker)
+    ctx.fillStyle = shade(color || '#3a3a4a', -18);
     ctx.beginPath();
     ctx.moveTo(bx - 3,         by + c.h * 0.40);
     ctx.lineTo(bx + c.w / 2,   by);
     ctx.lineTo(bx + c.w + 3,   by + c.h * 0.40);
     ctx.closePath();
     ctx.fill();
-    // Chimney
-    if (c.chimneyH > 0) {
-      ctx.fillRect(bx + c.w * 0.65, by - c.chimneyH, 8, c.chimneyH + 4);
-    }
-    // Windows (dim light)
-    ctx.fillStyle = '#6a7a4a';
+    // Windows (candlelight glow)
+    ctx.fillStyle = 'rgba(220,180,80,0.45)';
     ctx.fillRect(bx + c.w * 0.15, by + c.h * 0.50, c.w * 0.22, c.w * 0.18);
     ctx.fillRect(bx + c.w * 0.60, by + c.h * 0.50, c.w * 0.22, c.w * 0.18);
   }
@@ -1120,7 +1149,11 @@
       hitbox:     isDouble
                     ? { ox: 4, oy: 2, ow: def.width * 2 + DBL_GAP - 8, oh: 42 }
                     : { ...def.hitbox },
-      petalColor:  type === 'FLOWER' ? (Math.random() < 0.5 ? '#FFD700' : '#FF6B9D') : null,
+      petalColor:  type === 'FLOWER'
+                     ? (Math.random() < 0.5 ? '#FFD700' : '#FF6B9D')
+                     : (type === 'CAR' || type === 'SMALL_HOUSE')
+                       ? PORTOFINO[Math.floor(Math.random() * PORTOFINO.length)]
+                       : null,
       petalColor2: isDouble          ? (Math.random() < 0.5 ? '#FFD700' : '#FF6B9D') : null,
       double:      isDouble,
     });
@@ -1270,6 +1303,7 @@
           x:        i * (CANVAS_W / 8) + Math.random() * 40,
           style:    Math.floor(Math.random() * 3),
           speedMul: 0.55 + Math.random() * 0.10,
+          color:    PORTOFINO_MUTED[Math.floor(Math.random() * PORTOFINO_MUTED.length)],
         });
       }
     }
@@ -1311,8 +1345,9 @@
     for (const h of houses) {
       h.x -= GS.speed * h.speedMul;
       if (h.x < -150) {
-        h.x    = CANVAS_W + 10 + Math.random() * 80;
+        h.x     = CANVAS_W + 10 + Math.random() * 80;
         h.style = Math.floor(Math.random() * 3);
+        h.color = PORTOFINO_MUTED[Math.floor(Math.random() * PORTOFINO_MUTED.length)];
       }
     }
 
@@ -1362,16 +1397,21 @@
         ctx.stroke();
       }
     } else {
-      // Road markings (dashed centre line)
-      ctx.strokeStyle = '#AAAAAA';
-      ctx.lineWidth   = 2;
-      ctx.setLineDash([18, 14]);
-      const ry = GROUND_Y + 18;
-      ctx.beginPath();
-      ctx.moveTo(-((groundOff * 2 | 0) % 32), ry);
-      ctx.lineTo(CANVAS_W + 32, ry);
-      ctx.stroke();
-      ctx.setLineDash([]);
+      // Cobblestone pattern
+      const cw = 22, ch = 12, gap = 2;
+      ctx.lineWidth = 1;
+      let row = 0;
+      for (let gy = GROUND_Y + 2; gy < CANVAS_H; gy += ch + gap, row++) {
+        const scroll = (groundOff * 0.5) | 0;
+        const base   = -(scroll % (cw + gap));
+        const offset = row % 2 === 0 ? base : base + (cw + gap) / 2;
+        for (let gx = offset - cw; gx < CANVAS_W + cw; gx += cw + gap) {
+          ctx.fillStyle   = row % 3 === 0 ? '#8E8480' : '#968C88';
+          ctx.strokeStyle = '#6A6460';
+          ctx.fillRect(Math.round(gx), gy, cw, ch);
+          ctx.strokeRect(Math.round(gx), gy, cw, ch);
+        }
+      }
     }
 
     // Trees (Level 1 only)
@@ -1387,7 +1427,7 @@
     if (GS.currentLevel === 2) {
       ctx.save();
       ctx.globalAlpha = 0.78;
-      for (const h of houses) drawHouseSilhouette(ctx, h.x, GROUND_Y, h.style);
+      for (const h of houses) drawHouseSilhouette(ctx, h.x, GROUND_Y, h.style, h.color);
       ctx.restore();
     }
 
@@ -1708,15 +1748,15 @@
                 : t < 20  ? t / 20
                 : 1;
     ctx.save();
-    ctx.globalAlpha = alpha * 0.85;
-    ctx.fillStyle = '#0a0e1a';
+    ctx.globalAlpha = alpha * 0.88;
+    ctx.fillStyle = '#5ABEEE';
     ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
     ctx.globalAlpha = alpha;
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#FFD700';
+    ctx.fillStyle = '#FFFFFF';
     ctx.font = 'bold 28px "Courier New", monospace';
     ctx.fillText('LEVEL 2', CANVAS_W / 2, CANVAS_H / 2 - 18);
-    ctx.fillStyle = '#FFFFFF';
+    ctx.fillStyle = '#1a2a3a';
     ctx.font = '16px "Courier New", monospace';
     ctx.fillText('SUBURBS', CANVAS_W / 2, CANVAS_H / 2 + 12);
     ctx.restore();
