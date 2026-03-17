@@ -189,10 +189,17 @@
       cloudCount:      5,
       bugCount:        3,
     },
-    // TODO Level 2: Suburbs
-    //   name: 'Suburbs', bgColor: '#C0D8EE', groundColor: '#888',
-    //   obstacleTypes: ['CAR', 'BIRD'], powerUpTypes: ['SHIELD', 'BERRY'],
-    //   cloudCount: 3, bugCount: 0,
+    2: {
+      name:          'Suburbs',
+      bgColor:       '#C8DDEF',
+      bgGradBottom:  '#D8EAF5',
+      groundColor:   '#8A8A8A',
+      dirtColor:     '#666666',
+      obstacleTypes: ['CAR', 'SMALL_HOUSE', 'BIRD'],
+      powerUpTypes:  ['SHIELD'],
+      cloudCount:    3,
+      bugCount:      0,
+    },
 
     // TODO Level 3: City
     //   name: 'City', bgColor: '#C8D8F0', groundColor: '#666',
@@ -223,12 +230,22 @@
       drawFn: 'drawFlower',
       hitbox: { ox: 4, oy: 2, ow: 14, oh: 42 },
     },
-    // TODO LEVEL 2: CAR
-    //   { width:74, height:40, stompPoints:30, spawnWeight:2,
-    //     drawFn:'drawCar', hitbox:{ox:4,oy:6,ow:66,oh:30} }
-    // TODO LEVEL 2: BIRD (aerial � spawns above ground)
-    //   { width:30, height:22, stompPoints:15, spawnWeight:3,
-    //     drawFn:'drawBird', hitbox:{ox:2,oy:2,ow:26,oh:18}, floatHeight:80 }
+    CAR: {
+      width: 74, height: 40, stompPoints: 50, spawnWeight: 4,
+      drawFn: 'drawCar',
+      hitbox: { ox: 4, oy: 4, ow: 66, oh: 32 },
+    },
+    SMALL_HOUSE: {
+      width: 60, height: 52, stompPoints: 150, spawnWeight: 1,
+      drawFn: 'drawSmallHouse',
+      hitbox: { ox: 4, oy: 4, ow: 52, oh: 44 },
+    },
+    BIRD: {
+      width: 30, height: 18, stompPoints: 100, spawnWeight: 3,
+      drawFn: 'drawBird',
+      hitbox: { ox: 2, oy: 2, ow: 26, oh: 14 },
+      floatHeight: 82,
+    },
     // TODO LEVEL 3: BUILDING
     //   { width:52, height:85, stompPoints:40, spawnWeight:2,
     //     drawFn:'drawBuilding', hitbox:{ox:4,oy:0,ow:44,oh:85} }
@@ -281,6 +298,7 @@
     shakeFrames:       0,
     shakeMag:          6,
     currentLevel:      1,
+    levelTransition:   0,
   };
 
   let obstacles  = [];
@@ -289,6 +307,7 @@
   let clouds     = [];
   let bugs       = [];
   let trees      = [];
+  let houses     = [];
 
   let groundOff  = 0;
   let spawnTimer = 90;
@@ -710,24 +729,110 @@
   // ================================================================
 
   function drawCar(ctx, x, y, w, h) {
-    // TODO LEVEL 2: implement proper car sprite
-    ctx.fillStyle = '#888';
-    ctx.fillRect(x, y + h * 0.35, w, h * 0.65);
-    ctx.fillStyle = '#AACCFF';
-    ctx.fillRect(x + w * 0.1, y, w * 0.8, h * 0.45);
-    ctx.fillStyle = '#222';
+    const bx = x, by = y + h * 0.42, bw = w, bh = h * 0.58;
+    // Body
+    ctx.fillStyle = '#9B9B9B';
+    ctx.fillRect(bx, by, bw, bh);
+    // Cabin
+    ctx.fillStyle = '#C2C2C2';
+    ctx.fillRect(x + w * 0.12, y, w * 0.76, h * 0.48);
+    // Windows
+    ctx.fillStyle = '#AACCE8';
+    ctx.fillRect(x + w * 0.16, y + h * 0.05, w * 0.29, h * 0.32);
+    ctx.fillRect(x + w * 0.52, y + h * 0.05, w * 0.29, h * 0.32);
+    // Wheels
+    ctx.fillStyle = '#1a1a1a';
     ctx.beginPath();
-    ctx.arc(x + w * 0.22, y + h, h * 0.22, 0, Math.PI * 2);
-    ctx.arc(x + w * 0.78, y + h, h * 0.22, 0, Math.PI * 2);
+    ctx.arc(x + w * 0.21, y + h, h * 0.20, 0, Math.PI * 2);
+    ctx.arc(x + w * 0.79, y + h, h * 0.20, 0, Math.PI * 2);
     ctx.fill();
+    ctx.fillStyle = '#555';
+    ctx.beginPath();
+    ctx.arc(x + w * 0.21, y + h, h * 0.10, 0, Math.PI * 2);
+    ctx.arc(x + w * 0.79, y + h, h * 0.10, 0, Math.PI * 2);
+    ctx.fill();
+    // Headlight / taillight
+    ctx.fillStyle = '#FFE866';
+    ctx.fillRect(x + w - 4, by + 4, 4, 5);
+    ctx.fillStyle = '#FF4444';
+    ctx.fillRect(x, by + 4, 4, 5);
   }
 
   function drawBird(ctx, x, y, w, h) {
-    // TODO LEVEL 2: implement proper bird sprite
-    ctx.fillStyle = '#445';
+    const cx = x + w / 2, cy = y + h / 2;
+    const flap = Math.sin(GS.frame * 0.18) * h * 0.5;
+    ctx.fillStyle = '#334455';
+    // Body
     ctx.beginPath();
-    ctx.ellipse(x + w / 2, y + h / 2, w / 2, h / 3, 0, 0, Math.PI * 2);
+    ctx.ellipse(cx, cy + h * 0.1, w * 0.22, h * 0.22, 0, 0, Math.PI * 2);
     ctx.fill();
+    // Wings
+    ctx.beginPath();
+    ctx.moveTo(cx, cy + h * 0.1);
+    ctx.lineTo(cx - w * 0.5, cy - flap);
+    ctx.lineTo(cx - w * 0.18, cy + h * 0.05);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(cx, cy + h * 0.1);
+    ctx.lineTo(cx + w * 0.5, cy - flap);
+    ctx.lineTo(cx + w * 0.18, cy + h * 0.05);
+    ctx.closePath();
+    ctx.fill();
+    // Beak
+    ctx.fillStyle = '#FFAA22';
+    ctx.fillRect(cx + w * 0.18, cy + h * 0.06, 4, 2);
+  }
+
+  function drawSmallHouse(ctx, x, y, w, h) {
+    const base = y + h;
+    // Walls
+    ctx.fillStyle = '#E8D8B8';
+    ctx.fillRect(x, y + h * 0.38, w, h * 0.62);
+    // Roof
+    ctx.fillStyle = '#8B3030';
+    ctx.beginPath();
+    ctx.moveTo(x - 3,       y + h * 0.40);
+    ctx.lineTo(x + w / 2,   y);
+    ctx.lineTo(x + w + 3,   y + h * 0.40);
+    ctx.closePath();
+    ctx.fill();
+    // Door
+    ctx.fillStyle = '#7B5030';
+    ctx.fillRect(x + w * 0.38, base - h * 0.28, w * 0.24, h * 0.28);
+    // Window
+    ctx.fillStyle = '#AACCE8';
+    ctx.fillRect(x + w * 0.12, y + h * 0.48, w * 0.22, w * 0.22);
+    ctx.fillRect(x + w * 0.66, y + h * 0.48, w * 0.22, w * 0.22);
+  }
+
+  function drawHouseSilhouette(ctx, x, groundY, style) {
+    // style 0: small cottage, 1: medium house, 2: tall two-storey
+    const configs = [
+      { w: 55, h: 62,  chimneyH: 0  },
+      { w: 70, h: 82,  chimneyH: 0  },
+      { w: 65, h: 105, chimneyH: 16 },
+    ];
+    const c = configs[style] || configs[0];
+    const bx = x, by = groundY - c.h;
+    ctx.fillStyle = '#3a3a4a';
+    // Body
+    ctx.fillRect(bx, by + c.h * 0.38, c.w, c.h * 0.62);
+    // Roof
+    ctx.beginPath();
+    ctx.moveTo(bx - 3,         by + c.h * 0.40);
+    ctx.lineTo(bx + c.w / 2,   by);
+    ctx.lineTo(bx + c.w + 3,   by + c.h * 0.40);
+    ctx.closePath();
+    ctx.fill();
+    // Chimney
+    if (c.chimneyH > 0) {
+      ctx.fillRect(bx + c.w * 0.65, by - c.chimneyH, 8, c.chimneyH + 4);
+    }
+    // Windows (dim light)
+    ctx.fillStyle = '#6a7a4a';
+    ctx.fillRect(bx + c.w * 0.15, by + c.h * 0.50, c.w * 0.22, c.w * 0.18);
+    ctx.fillRect(bx + c.w * 0.60, by + c.h * 0.50, c.w * 0.22, c.w * 0.18);
   }
 
   function drawBuilding(ctx, x, y, w, h) {
@@ -795,7 +900,7 @@
   const DRAW = {
     drawBush, drawFlower,
     drawShieldPickup,
-    drawCar, drawBird, drawBuilding, drawPlane, drawSkyscraper, drawHelicopter,
+    drawCar, drawBird, drawSmallHouse, drawBuilding, drawPlane, drawSkyscraper, drawHelicopter,
     drawBerry, drawRadiationCrystal,
   };
 
@@ -1009,7 +1114,7 @@
     obstacles.push({
       type,
       x:          CANVAS_W + 12,
-      y:          GROUND_Y - def.height + 4 + (def.yOffset || 0),
+      y:          GROUND_Y - def.height + 4 + (def.yOffset || 0) - (def.floatHeight || 0),
       width:      isDouble ? def.width * 2 + DBL_GAP : def.width,
       height:     def.height,
       hitbox:     isDouble
@@ -1026,7 +1131,7 @@
 
     spawnTimer--;
     if (spawnTimer <= 0) {
-      spawnObstacle();
+      if (GS.levelTransition === 0) spawnObstacle();
       const sf = Math.max(0.55, INIT_SPEED / GS.speed);
       spawnTimer = Math.round((58 + Math.random() * 90) * sf);
     }
@@ -1145,15 +1250,28 @@
       });
     }
 
-    trees = [];
-    for (let i = 0; i < 8; i++) {
-      trees.push({
-        x:        i * (CANVAS_W / 8) + Math.random() * 40,
-        imgIdx:   Math.floor(Math.random() * 3),
-        imgIdx2:  Math.floor(Math.random() * 3),
-        double:   Math.random() < 0.40,
-        speedMul: 0.60 + Math.random() * 0.10,
-      });
+    if (GS.currentLevel === 1) {
+      trees = [];
+      for (let i = 0; i < 8; i++) {
+        trees.push({
+          x:        i * (CANVAS_W / 8) + Math.random() * 40,
+          imgIdx:   Math.floor(Math.random() * 3),
+          imgIdx2:  Math.floor(Math.random() * 3),
+          double:   Math.random() < 0.40,
+          speedMul: 0.60 + Math.random() * 0.10,
+        });
+      }
+      houses = [];
+    } else {
+      trees = [];
+      houses = [];
+      for (let i = 0; i < 8; i++) {
+        houses.push({
+          x:        i * (CANVAS_W / 8) + Math.random() * 40,
+          style:    Math.floor(Math.random() * 3),
+          speedMul: 0.55 + Math.random() * 0.10,
+        });
+      }
     }
 
   }
@@ -1190,6 +1308,14 @@
       }
     }
 
+    for (const h of houses) {
+      h.x -= GS.speed * h.speedMul;
+      if (h.x < -150) {
+        h.x    = CANVAS_W + 10 + Math.random() * 80;
+        h.style = Math.floor(Math.random() * 3);
+      }
+    }
+
   }
 
   function renderBackground(ctx) {
@@ -1220,39 +1346,63 @@
     ctx.fillStyle = lvl.dirtColor;
     ctx.fillRect(0, GROUND_Y, CANVAS_W, 5);
 
-    // Scrolling grass tufts
-    ctx.strokeStyle = shade(lvl.groundColor, 22);
-    ctx.lineWidth   = 2;
-    ctx.lineCap     = 'round';
-    const spacing   = 80;
-    for (let tx = -((groundOff | 0) % spacing); tx < CANVAS_W + spacing; tx += spacing) {
-      // Tuft A
+    // Scrolling ground details
+    if (GS.currentLevel === 1) {
+      // Grass tufts
+      ctx.strokeStyle = shade(lvl.groundColor, 22);
+      ctx.lineWidth   = 2;
+      ctx.lineCap     = 'round';
+      const spacing   = 80;
+      for (let tx = -((groundOff | 0) % spacing); tx < CANVAS_W + spacing; tx += spacing) {
+        ctx.beginPath();
+        ctx.moveTo(tx - 5, GROUND_Y); ctx.lineTo(tx, GROUND_Y - 8); ctx.lineTo(tx + 5, GROUND_Y);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(tx + 20, GROUND_Y); ctx.lineTo(tx + 24, GROUND_Y - 6); ctx.lineTo(tx + 28, GROUND_Y);
+        ctx.stroke();
+      }
+    } else {
+      // Road markings (dashed centre line)
+      ctx.strokeStyle = '#AAAAAA';
+      ctx.lineWidth   = 2;
+      ctx.setLineDash([18, 14]);
+      const ry = GROUND_Y + 18;
       ctx.beginPath();
-      ctx.moveTo(tx - 5, GROUND_Y); ctx.lineTo(tx, GROUND_Y - 8); ctx.lineTo(tx + 5, GROUND_Y);
+      ctx.moveTo(-((groundOff * 2 | 0) % 32), ry);
+      ctx.lineTo(CANVAS_W + 32, ry);
       ctx.stroke();
-      // Tuft B
-      ctx.beginPath();
-      ctx.moveTo(tx + 20, GROUND_Y); ctx.lineTo(tx + 24, GROUND_Y - 6); ctx.lineTo(tx + 28, GROUND_Y);
-      ctx.stroke();
+      ctx.setLineDash([]);
     }
 
-    // Trees
-    ctx.save();
-    ctx.globalAlpha = 0.92;
-    ctx.imageSmoothingEnabled = false;
-    for (const t of trees) drawTreeEntry(ctx, t, 190, GROUND_Y - 190 + 3);
-    ctx.restore();
-
-    // Butterflies and Bees
-    ctx.save();
-    ctx.globalAlpha = 0.85;
-    for (const b of bugs) {
-      const wobble = Math.sin(GS.frame * 0.015 + b.wobblePhase) * (b.type === 'bee' ? 0.06 : 0.10);
-      const totalTilt = b.tilt + wobble;
-      if (b.type === 'butterfly') drawButterfly(ctx, b.x, b.y, b.size, b.phase, GS.frame, totalTilt);
-      else                         drawBee(ctx, b.x, b.y, b.size, b.phase, GS.frame, totalTilt);
+    // Trees (Level 1 only)
+    if (GS.currentLevel === 1) {
+      ctx.save();
+      ctx.globalAlpha = 0.92;
+      ctx.imageSmoothingEnabled = false;
+      for (const t of trees) drawTreeEntry(ctx, t, 190, GROUND_Y - 190 + 3);
+      ctx.restore();
     }
-    ctx.restore();
+
+    // House silhouettes (Level 2 only)
+    if (GS.currentLevel === 2) {
+      ctx.save();
+      ctx.globalAlpha = 0.78;
+      for (const h of houses) drawHouseSilhouette(ctx, h.x, GROUND_Y, h.style);
+      ctx.restore();
+    }
+
+    // Butterflies and Bees (Level 1 only)
+    if (GS.currentLevel === 1) {
+      ctx.save();
+      ctx.globalAlpha = 0.85;
+      for (const b of bugs) {
+        const wobble = Math.sin(GS.frame * 0.015 + b.wobblePhase) * (b.type === 'bee' ? 0.06 : 0.10);
+        const totalTilt = b.tilt + wobble;
+        if (b.type === 'butterfly') drawButterfly(ctx, b.x, b.y, b.size, b.phase, GS.frame, totalTilt);
+        else                         drawBee(ctx, b.x, b.y, b.size, b.phase, GS.frame, totalTilt);
+      }
+      ctx.restore();
+    }
   }
 
   function drawTreeEntry(ctx, t, h, yPos) {
@@ -1475,6 +1625,17 @@
   // SECTION 12: GAME LOOP
   // ================================================================
 
+  function checkLevelUp() {
+    if (GS.currentLevel === 1 && GS.score >= 800 && GS.levelTransition === 0) {
+      GS.levelTransition = 130;
+      GS.currentLevel    = 2;
+      initBackground();
+      obstacles.length   = 0;
+      powerUps.length    = 0;
+    }
+    if (GS.levelTransition > 0) GS.levelTransition--;
+  }
+
   function updateSpeed() {
     const m = Math.floor(GS.score / 100);
     if (m > GS.lastSpeedMile) {
@@ -1486,6 +1647,7 @@
   function updateGame() {
     GS.frame++;
     updateSpeed();
+    checkLevelUp();
     updateBackground();
     updatePlayer();
     updateObstacles();
@@ -1533,9 +1695,31 @@
     // Goji
     drawGoji(ctx, player.x, player.y, player.stage, player.animState, GS.frame);
 
+    if (GS.levelTransition > 0) renderLevelTransition(ctx);
+
     ctx.restore(); // end shake
 
-    renderHUD(ctx); // always stable � outside shake transform
+    renderHUD(ctx); // always stable — outside shake transform
+  }
+
+  function renderLevelTransition(ctx) {
+    const t = GS.levelTransition;
+    const alpha = t > 110 ? (130 - t) / 20
+                : t < 20  ? t / 20
+                : 1;
+    ctx.save();
+    ctx.globalAlpha = alpha * 0.85;
+    ctx.fillStyle = '#0a0e1a';
+    ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+    ctx.globalAlpha = alpha;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#FFD700';
+    ctx.font = 'bold 28px "Courier New", monospace';
+    ctx.fillText('LEVEL 2', CANVAS_W / 2, CANVAS_H / 2 - 18);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '16px "Courier New", monospace';
+    ctx.fillText('SUBURBS', CANVAS_W / 2, CANVAS_H / 2 + 12);
+    ctx.restore();
   }
 
   function renderHUD(ctx) {
@@ -1563,6 +1747,9 @@
     ctx.fillStyle = 'rgba(255,255,255,0.38)';
     ctx.font      = '10px "Courier New", monospace';
     ctx.fillText(`SPD ${GS.speed.toFixed(1)}`, CANVAS_W / 2, 32);
+    ctx.fillStyle = 'rgba(255,255,255,0.28)';
+    ctx.font      = '9px "Courier New", monospace';
+    ctx.fillText(`LVL ${GS.currentLevel}`, CANVAS_W / 2, 44);
 
     // Right: shield status
     ctx.textAlign = 'right';
@@ -1692,8 +1879,9 @@
     GS.speed         = INIT_SPEED;
     GS.frame         = 0;
     GS.lastSpeedMile = 0;
-    GS.shakeFrames   = 0;
-    GS.currentLevel  = 1;
+    GS.shakeFrames     = 0;
+    GS.currentLevel    = 1;
+    GS.levelTransition = 0;
     obstacles        = [];
     powerUps         = [];
     particles        = [];
